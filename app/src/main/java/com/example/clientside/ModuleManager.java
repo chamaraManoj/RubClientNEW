@@ -18,7 +18,6 @@ public class ModuleManager {
 
 
     private static final int CORE_POOL_SIZE = Runtime.getRuntime().availableProcessors();
-    ;
     private static final int MAX_POOL_SIZE = CORE_POOL_SIZE * 2;
     private static final int KEEP_ALIVE_TIME = 1;
     private static final TimeUnit KEEP_ALIVE_TIME_UNIT = TimeUnit.SECONDS;
