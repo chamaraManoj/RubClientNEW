@@ -30,40 +30,53 @@ public class SocektReceiveFile implements Runnable {
     public boolean getFIle(){
         int bytesRead = 0;
         int bytesAvailable = 0;
+
+        int totByteRead = 0;
+        int[] layerLength = new int[4];
+        int tempCounter;
+
+
         imageFrame = new byte[600000];
         if (socket != null) {
             //Log.d("Debug", "1");
-            do {
-                try {
-                    //Log.d("Debug", "2");
-                    InputStream inputStream = socket.getInputStream();
-                    BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-                    //bytesAvailable = inputStream.available();
+           //do {
+            try {
+                Log.d("Debug", "2");
+                InputStream inputStream = socket.getInputStream();
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 
-                    //if (bytesAvailable > 0) {
-                    int current;
-                    //bytesRead = inputStream.read(imageFrame, 0, imageFrame.length);
-                    bytesRead = bufferedInputStream.read(imageFrame, 0, imageFrame.length);
-                    current = 0;
-                    //Log.d("Debug", String.valueOf(bytesRead));
-                    current = bytesRead;
+                bytesRead = bufferedInputStream.read(imageFrame, 0, 8);
 
-                    do {
-                        bytesRead = bufferedInputStream.read(imageFrame, current, (imageFrame.length - current));
-                        if (bytesRead >= 0) current += bytesRead;
-                        //Log.d("Debug", String.valueOf(bytesRead));
-                    } while (bytesRead > 0);
-
-                    Log.d("Debug", "Reply Byte " + current + "\n");
-                    //Log.d("Debug", "Reply Byte " +bytesRead+ "\n");
-                    socket.shutdownInput();
-                    //Log.d("Debug", "3");
-                    //}
-
-                } catch (IOException e) {
-                    e.printStackTrace();
+                for (tempCounter = 0; tempCounter < 4; tempCounter++) {
+                    layerLength[tempCounter] = (imageFrame[tempCounter*2] & 0xFF) << 8 | imageFrame[tempCounter * 2 + 1] & 0xFF;
                 }
-            } while (bytesRead == 0);
+                totByteRead = bytesRead;
+
+                Log.d("Debug", String.valueOf(bytesRead));
+                int tempByteRead=0;
+                for (tempCounter = 0; tempCounter < 4; tempCounter++) {
+                    Log.d("Debug", "Length " + String.valueOf(layerLength[tempCounter]) + "\n");
+                    int endOfByte = totByteRead + layerLength[tempCounter];
+                    Log.d("Debug", "End Byte " + String.valueOf(endOfByte) + "\n");
+                    do {
+                        tempByteRead = bufferedInputStream.read(imageFrame, totByteRead, endOfByte - totByteRead);
+                        if (tempByteRead >= 0) totByteRead += tempByteRead;
+                        Log.d("Debug", "Temp Byte " + String.valueOf(tempByteRead) + "\n");
+                    } while (tempByteRead > 0);
+                    Log.d("Debug", "Reply Byte " + String.valueOf(totByteRead) + "\n");
+                    tempByteRead=0;
+                }
+
+
+                //Log.d("Debug", "Reply Byte " +bytesRead+ "\n");
+                socket.shutdownInput();
+                Log.d("Debug", "3");
+                //}
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //} while (bytesRead == 0);
         }
         return true;
     }
