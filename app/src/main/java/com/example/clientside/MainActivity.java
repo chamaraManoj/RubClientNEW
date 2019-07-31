@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
     String message = "";
     //private static String ip = "10.130.1.229";
     private static String ip = "10.1.1.35";
-
+/**/
     Button sendButton;
     private byte[][] receiveBuffer;
 
