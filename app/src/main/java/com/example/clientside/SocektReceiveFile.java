@@ -12,10 +12,14 @@ public class SocektReceiveFile implements Runnable {
     private Socket socket;
     byte[] imageFrame;
     ReceivedBufferUpdateTask  updateResults;
+    int thread;
+    int chunk;
 
-    public SocektReceiveFile(Socket socket, ReceivedBufferUpdateTask updateMainThreadBuffer){
+    public SocektReceiveFile(Socket socket, ReceivedBufferUpdateTask updateMainThreadBuffer,int thread, int chunk){
         this.socket = socket;
         this.updateResults = updateMainThreadBuffer;
+        this.thread = thread;
+        this.chunk = chunk;
         ModuleManager.getDownloadManager().getMainThreadExecutor().execute(updateResults);
     }
 
@@ -23,8 +27,6 @@ public class SocektReceiveFile implements Runnable {
     public void run() {
         getFIle();
         updateResults.setBackgroundMsg(imageFrame);
-
-
     }
 
     public boolean getFIle(){
@@ -41,7 +43,7 @@ public class SocektReceiveFile implements Runnable {
             //Log.d("Debug", "1");
            //do {
             try {
-                Log.d("Debug", "2");
+                //Log.d("Debug", "2");
                 InputStream inputStream = socket.getInputStream();
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 
@@ -52,25 +54,25 @@ public class SocektReceiveFile implements Runnable {
                 }
                 totByteRead = bytesRead;
 
-                Log.d("Debug", String.valueOf(bytesRead));
+                //Log.d("Debug", String.valueOf(bytesRead));
                 int tempByteRead=0;
                 for (tempCounter = 0; tempCounter < 4; tempCounter++) {
-                    Log.d("Debug", "Length " + String.valueOf(layerLength[tempCounter]) + "\n");
+                    //Log.d("Debug", "Length " + String.valueOf(layerLength[tempCounter]) + "\n");
                     int endOfByte = totByteRead + layerLength[tempCounter];
-                    Log.d("Debug", "End Byte " + String.valueOf(endOfByte) + "\n");
+                    //Log.d("Debug", "End Byte " + String.valueOf(endOfByte) + "\n");
                     do {
                         tempByteRead = bufferedInputStream.read(imageFrame, totByteRead, endOfByte - totByteRead);
                         if (tempByteRead >= 0) totByteRead += tempByteRead;
-                        Log.d("Debug", "Temp Byte " + String.valueOf(tempByteRead) + "\n");
+                        //Log.d("Debug", "Temp Byte " + String.valueOf(tempByteRead) + "\n");
                     } while (tempByteRead > 0);
-                    Log.d("Debug", "Reply Byte " + String.valueOf(totByteRead) + "\n");
+
                     tempByteRead=0;
                 }
-
+                Log.d("Debug", "Thread "+String.valueOf(thread)+"    Chunk "+String.valueOf(chunk)+ "     Tot " + String.valueOf(totByteRead) + "\n");
 
                 //Log.d("Debug", "Reply Byte " +bytesRead+ "\n");
-                socket.shutdownInput();
-                Log.d("Debug", "3");
+                socket.close();
+                //Log.d("Debug", "3");
                 //}
 
             } catch (IOException e) {

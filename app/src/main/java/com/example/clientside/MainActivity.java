@@ -19,9 +19,9 @@ public class MainActivity extends AppCompatActivity {
 
     //private UiHandler mUiHandler;
     String message = "";
-    //private static String ip = "10.130.1.229";
-    private static String ip = "10.1.1.35";
-/**/
+    private static String ip = "10.130.1.229";
+    //private static String ip = "10.1.1.35";
+    /**/
     Button sendButton;
     private byte[][] receiveBuffer;
 
@@ -46,14 +46,8 @@ public class MainActivity extends AppCompatActivity {
 
                 sendMessage(); //This is a Async task to send the message to the Server
 
-                for (tempCounterMain = 0; tempCounterMain < Constants.TOTAL_NUM_OF_REC_SOCKETS; tempCounterMain++) {
-                    ReceivedBufferUpdateTask receivedBufferUpdateTask = new ReceivedBufferUpdateTask(receiveBuffer[tempCounterMain]);
-                    SocektReceiveFile socektReceiveFile = new SocektReceiveFile(receiveSockets[tempCounterMain], receivedBufferUpdateTask);
-                    ModuleManager.getDownloadManager().runDownloadFile(socektReceiveFile);
-                }
+
             }
-
-
         });
     }
 
@@ -78,26 +72,38 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... arg0) {
-            //Log.d("Debug", "2");
+            Log.d("Debug", "1");
             int BUFFER_LENGTH = 9;
             int tempCounter;
 
             try {
 
-                //Log.d("Debug", "5");
+                //Log.d("Debug", "2");
+
                 byte[] sendBuffer = new byte[BUFFER_LENGTH];
-                //Log.d("Debug", "6");
-                for (int frame = 0; frame < 1; frame++) {
-                    byte tile1 = 1;
-                    byte tile2 = 3;
-                    byte tile3 = 5;
-                    byte tile4 = 6;
-                    frameID = frame;
+
+                //Log.d("Debug", "3");
+
+                for (int chunk = 1; chunk < 10; chunk++) {
+
+                    int port;
+                    byte tile1 = 19;
+                    byte tile2 = (byte)(chunk%15);
+                    byte tile3 = 18;
+                    byte tile4 = (byte)(chunk%15);
+                    frameID = chunk;
                     byte quality = 0;
 
+                    //Log.d("Debug", "4");
+
                     sendSocket = new Socket(ip, 5550);
+
+                    //Log.d("Debug", "5");
+
                     for (tempCounter = 1; tempCounter <= Constants.TOTAL_NUM_OF_REC_SOCKETS; tempCounter++) {
-                        receiveSockets[tempCounter] = new Socket(ip, Constants.PORT_INDEX + tempCounter);
+                        port = Constants.PORT_INDEX + tempCounter;
+                        //Log.d("Debug", String.valueOf(port));
+                        receiveSockets[tempCounter - 1] = new Socket(ip, port);
                     }
 
                     //Log.d("Debug", "7");
@@ -119,11 +125,15 @@ public class MainActivity extends AppCompatActivity {
                         //Log.d("Debug", "Sending msg");
                         os.write(sendBuffer, 0, sendBuffer.length);
                         os.flush();
-                        sendSocket.shutdownOutput();
+                        sendSocket.close();
 
-                        /*ReceivedBufferUpdateTask receivedBufferUpdateTask = new ReceivedBufferUpdateTask(receiverBuffer);
-                        SocektReceiveFile socektReceiveFile = new SocektReceiveFile(socket2,receivedBufferUpdateTask);
-                        ModuleManager.getDownloadManager().runDownloadFile(socektReceiveFile);*/
+                        for (tempCounter = 0; tempCounter < Constants.TOTAL_NUM_OF_REC_SOCKETS; tempCounter++) {
+                           //Log.d("Debug",String.valueOf(chunk)+ "  "+ String.valueOf(tempCounter));
+                            ReceivedBufferUpdateTask receivedBufferUpdateTask = new ReceivedBufferUpdateTask(receiveBuffer[tempCounter]);
+                            SocektReceiveFile socektReceiveFile = new SocektReceiveFile(receiveSockets[tempCounter], receivedBufferUpdateTask,tempCounter,chunk);
+                            ModuleManager.getDownloadManager().runDownloadFile(socektReceiveFile);
+                        }
+
 
                     } catch (IOException e) {
                         e.printStackTrace();
