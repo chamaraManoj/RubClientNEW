@@ -43,11 +43,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 int tempCounterMain;
-
                 sendMessage(); //This is a Async task to send the message to the Server
 
+                //System.out.println()
 
-            }
+           }
         });
     }
 
@@ -149,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
                 //response = "IOException: " + e.toString();
             } catch (Exception e) {
                 e.printStackTrace();
-                //Log.d("Degbig", e.toString());
+                //Log.d("Debug", e.toString());
             } finally {
                 //Log.d("Degbig", "7");
                 if (sendSocket != null) {

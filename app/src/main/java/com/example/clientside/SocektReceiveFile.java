@@ -1,5 +1,9 @@
 package com.example.clientside;
 
+import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
+import android.media.MediaFormat;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -24,8 +28,11 @@ public class SocektReceiveFile implements Runnable {
     }
 
     @Override
-    public void run() {
-        getFIle();
+    public void run(){
+        boolean allFrameReceived = getFIle();
+        if(allFrameReceived) {
+            decodeFrame();
+        }
         updateResults.setBackgroundMsg(imageFrame);
     }
 
@@ -34,14 +41,15 @@ public class SocektReceiveFile implements Runnable {
         int bytesAvailable = 0;
 
         int totByteRead = 0;
-        int[] layerLength = new int[4];
+        int[] layerLength = new int[Constants.NUM_OF_LAYERS];
+        boolean[] frameReceived = new boolean[Constants.NUM_OF_LAYERS];
         int tempCounter;
 
 
         imageFrame = new byte[600000];
         if (socket != null) {
             //Log.d("Debug", "1");
-           //do {
+
             try {
                 //Log.d("Debug", "2");
                 InputStream inputStream = socket.getInputStream();
@@ -49,14 +57,14 @@ public class SocektReceiveFile implements Runnable {
 
                 bytesRead = bufferedInputStream.read(imageFrame, 0, 8);
 
-                for (tempCounter = 0; tempCounter < 4; tempCounter++) {
+                for (tempCounter = 0; tempCounter < Constants.NUM_OF_LAYERS; tempCounter++) {
                     layerLength[tempCounter] = (imageFrame[tempCounter*2] & 0xFF) << 8 | imageFrame[tempCounter * 2 + 1] & 0xFF;
                 }
                 totByteRead = bytesRead;
 
                 //Log.d("Debug", String.valueOf(bytesRead));
                 int tempByteRead=0;
-                for (tempCounter = 0; tempCounter < 4; tempCounter++) {
+                for (tempCounter = 0; tempCounter < Constants.NUM_OF_LAYERS; tempCounter++) {
                     //Log.d("Debug", "Length " + String.valueOf(layerLength[tempCounter]) + "\n");
                     int endOfByte = totByteRead + layerLength[tempCounter];
                     //Log.d("Debug", "End Byte " + String.valueOf(endOfByte) + "\n");
@@ -66,6 +74,11 @@ public class SocektReceiveFile implements Runnable {
                         //Log.d("Debug", "Temp Byte " + String.valueOf(tempByteRead) + "\n");
                     } while (tempByteRead > 0);
 
+                    if(endOfByte - totByteRead == 0) {
+                        frameReceived[tempCounter] = true;
+                    }else{
+                        frameReceived[tempCounter] = false;
+                    }
                     tempByteRead=0;
                 }
                 Log.d("Debug", "Thread "+String.valueOf(thread)+"    Chunk "+String.valueOf(chunk)+ "     Tot " + String.valueOf(totByteRead) + "\n");
@@ -73,14 +86,34 @@ public class SocektReceiveFile implements Runnable {
                 //Log.d("Debug", "Reply Byte " +bytesRead+ "\n");
                 socket.close();
                 //Log.d("Debug", "3");
-                //}
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            //} while (bytesRead == 0);
+
+        }
+
+        /*If any of the frame is not received then return false*/
+        for(tempCounter =0;tempCounter<Constants.NUM_OF_LAYERS;tempCounter++){
+            if(frameReceived[tempCounter]==false)
+                return false;
         }
         return true;
+    }
+
+    public void decodeFrame(){
+        MediaCodecList mediaCodecList = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+        MediaFormat mediaFormat = new MediaFormat();
+        mediaFormat.setFeatureEnabled(MediaFormat.MIMETYPE_VIDEO_HEVC,true);
+        mediaFormat.setFeatureEnabled(MediaCodecInfo.CodecCapabilities.FEATURE_SecurePlayback,true);
+
+        String nameOfDecoder = mediaCodecList.findDecoderForFormat(mediaFormat);
+
+        try {
+            MediaCodec mediaCodec = MediaCodec.createByCodecName(nameOfDecoder);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }
